@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@radix-ui/react-aspect-ratio': ^1.1.0
   '@radix-ui/react-checkbox': ^1.1.2
   '@radix-ui/react-dialog': ^1.1.2
   '@radix-ui/react-select': ^2.1.2
@@ -14,6 +15,7 @@ specifiers:
   class-variance-authority: ^0.7.0
   clsx: ^2.1.1
   cmdk: 1.0.0
+  embla-carousel-react: ^8.3.1
   lucide-react: ^0.454.0
   next: 15.0.3
   postcss: ^8
@@ -26,6 +28,7 @@ specifiers:
   zustand: ^5.0.1
 
 dependencies:
+  '@radix-ui/react-aspect-ratio': 1.1.0_2mtlta4a7mta5odvhbazjrnihq
   '@radix-ui/react-checkbox': 1.1.2_2mtlta4a7mta5odvhbazjrnihq
   '@radix-ui/react-dialog': 1.1.2_2mtlta4a7mta5odvhbazjrnihq
   '@radix-ui/react-select': 2.1.2_2mtlta4a7mta5odvhbazjrnihq
@@ -36,6 +39,7 @@ dependencies:
   class-variance-authority: 0.7.0
   clsx: 2.1.1
   cmdk: 1.0.0_2mtlta4a7mta5odvhbazjrnihq
+  embla-carousel-react: 8.3.1_djkv2mt33n4uojumpbp7wfsksi
   lucide-react: 0.454.0_djkv2mt33n4uojumpbp7wfsksi
   next: 15.0.3_55rfqn2dqraeny2yjtmdl4sm4i
   react: 19.0.0-rc-66855b96-20241106
@@ -433,6 +437,26 @@ packages:
 
   /@radix-ui/react-arrow/1.1.0_2mtlta4a7mta5odvhbazjrnihq:
     resolution: {integrity: sha512-FmlW1rCg7hBpEBwFbjHwCW6AmWLQM6g/v0Sn8XbP9NvmSZ2San1FpQeyPtufzOMSIx7Y4dzjlHoifhp+7NkZhw==}
+    peerDependencies:
+      '@types/react': '*'
+      '@types/react-dom': '*'
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      '@types/react-dom':
+        optional: true
+    dependencies:
+      '@radix-ui/react-primitive': 2.0.0_2mtlta4a7mta5odvhbazjrnihq
+      '@types/react': 18.3.12
+      '@types/react-dom': 18.3.1
+      react: 19.0.0-rc-66855b96-20241106
+      react-dom: 19.0.0-rc-66855b96-20241106_djkv2mt33n4uojumpbp7wfsksi
+    dev: false
+
+  /@radix-ui/react-aspect-ratio/1.1.0_2mtlta4a7mta5odvhbazjrnihq:
+    resolution: {integrity: sha512-dP87DM/Y7jFlPgUZTlhx6FF5CEzOiaxp2rBCKlaXlpH5Ip/9Fg5zZ9lDOQ5o/MOfUlf36eak14zoWYpgcgGoOg==}
     peerDependencies:
       '@types/react': '*'
       '@types/react-dom': '*'
@@ -1456,6 +1480,28 @@ packages:
 
   /eastasianwidth/0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
+
+  /embla-carousel-react/8.3.1_djkv2mt33n4uojumpbp7wfsksi:
+    resolution: {integrity: sha512-gBY0zM+2ASvKFwRpTIOn2SLifFqOKKap9R/y0iCpJWS3bc8OHVEn2gAThGYl2uq0N+hu9aBiswffL++OYZOmDQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.1 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    dependencies:
+      embla-carousel: 8.3.1
+      embla-carousel-reactive-utils: 8.3.1_embla-carousel@8.3.1
+      react: 19.0.0-rc-66855b96-20241106
+    dev: false
+
+  /embla-carousel-reactive-utils/8.3.1_embla-carousel@8.3.1:
+    resolution: {integrity: sha512-Js6rTTINNGnUGPu7l5kTcheoSbEnP5Ak2iX0G9uOoI8okTNLMzuWlEIpYFd1WP0Sq82FFcLkKM2oiO6jcElZ/Q==}
+    peerDependencies:
+      embla-carousel: 8.3.1
+    dependencies:
+      embla-carousel: 8.3.1
+    dev: false
+
+  /embla-carousel/8.3.1:
+    resolution: {integrity: sha512-DutFjtEO586XptDn4cwvBJwsR/8fMa4jUk5Jk2g+/elKgu8mdn0Z2sx33g4JskvbLc1/6P8Xg4QlfELGJFcP5A==}
+    dev: false
 
   /emoji-regex/8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
