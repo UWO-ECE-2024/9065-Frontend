@@ -19,11 +19,14 @@ import {
   CommandList,
 } from "./ui/command";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { useRouter } from "next/navigation";
 
 const Navbar = () => {
+  const router = useRouter();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [cartCount, setCartCount] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const searchResults = [
     { title: "Brand A's Collection", category: "Brand A" },
@@ -44,6 +47,20 @@ const Navbar = () => {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
+  useEffect(() => {
+    const handleEnterKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && isSearchOpen) {
+        e.preventDefault();
+        searchQuery.length > 0
+          ? router.push(`/search?query=${encodeURIComponent(searchQuery)}`)
+          : router.push("/search");
+      }
+    };
+
+    document.addEventListener("keydown", handleEnterKey);
+    return () => document.removeEventListener("keydown", handleEnterKey);
+  }, [isSearchOpen, searchQuery, router]);
+
   return (
     <header className="sticky top-0 z-10 bg-white border-b">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -62,37 +79,37 @@ const Navbar = () => {
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-4 mt-4">
-              <Link href="#" className="text-lg font-medium">
+              <Link href="/search?query=BrandA" className="text-lg font-medium">
                 Brand A
               </Link>
-              <Link href="#" className="text-lg font-medium">
+              <Link href="/search?query=BrandA" className="text-lg font-medium">
                 Brand B
               </Link>
-              <Link href="#" className="text-lg font-medium">
+              <Link href="/search?query=BrandA" className="text-lg font-medium">
                 Brand C
               </Link>
-              <Link href="#" className="text-lg font-medium">
+              <Link href="/search?query=BrandA" className="text-lg font-medium">
                 Brand D
               </Link>
             </nav>
           </SheetContent>
         </Sheet>
-        <nav className="hidden md:flex items-center gap-6 mx-6">
-          <Link href="#" className="text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-6 mx-6 z-10">
+          <Link href="/search?query=BrandA" className="text-sm font-medium">
             Brand A
           </Link>
-          <Link href="#" className="text-sm font-medium">
+          <Link href="/search?query=BrandA" className="text-sm font-medium">
             Brand B
           </Link>
-          <Link href="#" className="text-sm font-medium">
+          <Link href="/search?query=BrandA" className="text-sm font-medium">
             Brand C
           </Link>
-          <Link href="#" className="text-sm font-medium">
+          <Link href="/search?query=BrandA" className="text-sm font-medium">
             Brand D
           </Link>
         </nav>
 
-        <div className="w-full  absolute flex items-center justify-center flex-1 md:justify-center">
+        <div className="w-full  absolute flex items-center justify-center flex-1 md:justify-center z-0">
           <Link href="/" className="flex items-center gap-2">
             <ShoppingBag className="h-6 w-6" />
           </Link>
@@ -105,15 +122,15 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="flex"
+            className="relative"
             onClick={() => setIsSearchOpen(true)}
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-6 w-6" />
             <span className="sr-only">Search</span>
           </Button>
 
           <Link href="/user-center">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="relative">
               <User className="h-6 w-6" />
               <span className="sr-only">User Center</span>
             </Button>
@@ -143,7 +160,12 @@ const Navbar = () => {
       </div>
 
       <CommandDialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <CommandInput placeholder="Search products..." />
+        <CommandInput
+          placeholder="Search products..."
+          onValueChange={(value) => {
+            setSearchQuery(value);
+          }}
+        />
         <CommandList>
           <VisuallyHidden.Root>
             <SheetTitle>Menu</SheetTitle>
