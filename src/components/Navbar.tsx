@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
-import { Menu, Search, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { Menu, Search, ShoppingBag, ShoppingCart, User, X } from "lucide-react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -20,12 +22,31 @@ import {
 } from "./ui/command";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
+import { ScrollArea } from "./ui/scroll-area";
+import { Input } from "./ui/input";
+
+const initialCartItems = [
+  {
+    id: 1,
+    name: "Classic White T-Shirt",
+    price: 29.99,
+    quantity: 1,
+    image: "/next.svg",
+  },
+  {
+    id: 2,
+    name: "Slim Fit Jeans",
+    price: 59.99,
+    quantity: 2,
+    image: "/next.svg",
+  },
+];
 
 const Navbar = () => {
   const router = useRouter();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(1);
+  const [cartItems, setCartItems] = useState(initialCartItems);
   const [searchQuery, setSearchQuery] = useState("");
 
   const searchResults = [
@@ -33,6 +54,35 @@ const Navbar = () => {
     { title: "Brand B's Collection", category: "Brand B" },
     { title: "Brand C's Collcation", category: "Brand C" },
   ];
+
+  const updateQuantity = useCallback(
+    (id: number, newQuantity: number) => {
+      setCartItems((items) =>
+        items.map((item) =>
+          item.id === id
+            ? { ...item, quantity: Math.max(0, newQuantity) }
+            : item
+        )
+      );
+    },
+    [cartItems]
+  );
+
+  const removeItem = useCallback(
+    (id: number) => {
+      setCartItems((items) => items.filter((item) => item.id !== id));
+    },
+    [cartItems]
+  );
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+  const cartTotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cartItems]
+  );
 
   useEffect(() => {
     // Press cmd+k to open search
@@ -151,9 +201,82 @@ const Navbar = () => {
               <SheetHeader>
                 <SheetTitle>Your Cart</SheetTitle>
               </SheetHeader>
-              <div className="mt-4">
-                <p>Your cart items will appear here.</p>
-              </div>
+              <ScrollArea className="h-[calc(100vh-200px)] mt-4">
+                {cartItems.length === 0 ? (
+                  <p className="text-center text-muted-foreground">
+                    Your cart is empty.
+                  </p>
+                ) : (
+                  cartItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center py-4 border-b"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-16 h-16 object-contain mr-4"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          ${item.price.toFixed(2)}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                          >
+                            -
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateQuantity(
+                                item.id,
+                                parseInt(e.target.value, 10)
+                              )
+                            }
+                            className="w-14 mx-2 text-center "
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </ScrollArea>
+              <SheetFooter className="mt-4">
+                <div className="w-full">
+                  <div className="flex justify-between mb-4">
+                    <span>Total:</span>
+                    <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  <SheetClose asChild>
+                    <Button className="w-full">Checkout</Button>
+                  </SheetClose>
+                </div>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
