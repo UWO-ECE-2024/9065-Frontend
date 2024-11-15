@@ -2,6 +2,7 @@
 import Footer from "@/components/Footer";
 import ProductStockCard from "@/components/ProductStockCard";
 import NavbarStocking from "@/components/NavbarStocking";
+import AddItemCard from "@/components/AddItemCard";
 
 const page =  () => {
     const products = [
@@ -20,6 +21,7 @@ const page =  () => {
                     {products.map((product) => (
                         <ProductStockCard key={product.id} {...product} />
                     ))}
+                    <AddItemCard/>
                 </div>
             </main>
 

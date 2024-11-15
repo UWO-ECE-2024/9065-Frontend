@@ -2,7 +2,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Menu, Search, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { Menu, Search, ShoppingBag, ShoppingCart ,CirclePlus,Plus,User } from "lucide-react";
 import {
     Sheet,
     SheetContent,
@@ -65,17 +65,29 @@ const NavbarStocking = () => {
         <header className="sticky top-0 z-10 bg-white border-b">
             <div className="container mx-auto px-4 py-4 flex justify-between items-center">
                 {
-                   "pos" // right
+                    // "pos" // right
                 }
                 <div className="flex items-center space-x-4">
 
                     <Link href="/user-center">
                         <Button variant="ghost" size="icon" className="relative">
-                            <User className="h-6 w-6" />
+                            <User className="h-6 w-6"/>
                             <span className="sr-only">User Center</span>
                         </Button>
                     </Link>
                 </div>
+                <div className="flex items-center space-x-4">
+
+                    <Link href="/user-center">
+                        <Button variant="ghost" size="icon" className="relative">
+                            <CirclePlus className="h-6 w-6"/>
+                            <span className="sr-only">User Center</span>
+                        </Button>
+                    </Link>
+                </div>
+                {
+
+                }
             </div>
         </header>
     );
