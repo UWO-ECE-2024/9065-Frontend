@@ -33,6 +33,8 @@ export const request = async ({
   }
 
   const responseData = await response.json();
+  console.log(responseData);
+
   if (!responseData.data) {
     throw new Error("No data found");
   }

@@ -24,6 +24,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "./ui/scroll-area";
 import { Input } from "./ui/input";
+import { useCategorys } from "@/store/shopping-store";
 
 const initialCartItems = [
   {
@@ -44,16 +45,11 @@ const initialCartItems = [
 
 const Navbar = () => {
   const router = useRouter();
+  const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const searchResults = [
-    { title: "Brand A's Collection", category: "Brand A" },
-    { title: "Brand B's Collection", category: "Brand B" },
-    { title: "Brand C's Collcation", category: "Brand C" },
-  ];
 
   const updateQuantity = useCallback(
     (id: number, newQuantity: number) => {
@@ -119,7 +115,7 @@ const Navbar = () => {
         }
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button variant="ghost" size="icon" className="md:hidden relative">
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -129,34 +125,28 @@ const Navbar = () => {
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-4 mt-4">
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand A
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand B
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand C
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand D
-              </Link>
+              {categorys.map((category) => (
+                <Link
+                  key={category.categoryId}
+                  href={`/search?query=${category.name}`}
+                  className="text-lg font-medium"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </nav>
           </SheetContent>
         </Sheet>
         <nav className="hidden md:flex items-center gap-6 mx-6 z-10">
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand A
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand B
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand C
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand D
-          </Link>
+          {categorys.slice(0, 3).map((category) => (
+            <Link
+              key={category.categoryId}
+              href={`/search?query=${category.name}`}
+              className="text-lg font-medium"
+            >
+              {category.name}
+            </Link>
+          ))}
         </nav>
 
         <div className="w-full  absolute flex items-center justify-center flex-1 md:justify-center z-0">
@@ -295,15 +285,15 @@ const Navbar = () => {
           </VisuallyHidden.Root>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
-            {searchResults.map((result) => (
+            {categorys.slice(0, 3).map((result) => (
               <CommandItem
-                key={result.title}
+                key={result.categoryId}
                 onSelect={() => {
                   setIsSearchOpen(false);
                   // Handle navigation or other actions
                 }}
               >
-                <span>{result.title}</span>
+                <span>{result.name}</span>
               </CommandItem>
             ))}
           </CommandGroup>
