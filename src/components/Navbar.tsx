@@ -2,7 +2,15 @@
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
-import { Menu, Search, ShoppingBag, ShoppingCart, User, X } from "lucide-react";
+import {
+  Menu,
+  Search,
+  ShoppingBag,
+  ShoppingCart,
+  TextSearch,
+  User,
+  X,
+} from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -169,7 +177,7 @@ const Navbar = () => {
             className="relative"
             onClick={() => setIsSearchOpen(true)}
           >
-            <Search className="h-6 w-6" />
+            <TextSearch className="h-6 w-6" />
             <span className="sr-only">Search</span>
           </Button>
 

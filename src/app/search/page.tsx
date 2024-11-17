@@ -1,7 +1,7 @@
 import React from "react";
 import ContentPage from "./content-page";
 import { Metadata, ResolvingMetadata } from "next";
-import { Props, SearchPageProps } from "@/types/pages";
+import { Props } from "@/types/pages";
 
 export async function generateMetadata(
   { params, searchParams }: Props,
