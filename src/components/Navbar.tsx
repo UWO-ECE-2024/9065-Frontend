@@ -115,7 +115,11 @@ const Navbar = () => {
         }
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden relative  z-10"
+            >
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -128,7 +132,7 @@ const Navbar = () => {
               {categorys.map((category) => (
                 <Link
                   key={category.categoryId}
-                  href={`/search?query=${category.name}`}
+                  href={`/search?category=${category.name}`}
                   className="text-lg font-medium"
                 >
                   {category.name}
@@ -141,7 +145,7 @@ const Navbar = () => {
           {categorys.slice(0, 3).map((category) => (
             <Link
               key={category.categoryId}
-              href={`/search?query=${category.name}`}
+              href={`/search?category=${category.name}`}
               className="text-lg font-medium"
             >
               {category.name}
@@ -291,6 +295,7 @@ const Navbar = () => {
                 onSelect={() => {
                   setIsSearchOpen(false);
                   // Handle navigation or other actions
+                  router.push(`/search?category=${result.name}`);
                 }}
               >
                 <span>{result.name}</span>
