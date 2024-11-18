@@ -23,8 +23,8 @@ const ProductStockCard: React.FC<ProductStockCardProps> = (props) => {
                     className="aspect-square bg-gray-200 rounded-md mb-4 hover:scale-105 duration-100 cursor-pointer"
                     onClick={() => router.push(`/product/${props.name}`)}
                 ></div>
-                <p className="text-2xl font-bold">${props.price.toFixed(2)}</p>
-                <p className="text-2xl font-bold">inventory: {props.inventory}</p>
+                <p className="text-2xl font-bold">${props.basePrice}</p>
+                <p className="text-2xl font-bold">inventory: {props.stockQuantity}</p>
             </CardContent>
             <CardFooter>
                 <Button className="w-full hover:scale-105 duration-75 ease-in-out">

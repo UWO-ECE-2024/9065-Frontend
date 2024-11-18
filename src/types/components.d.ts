@@ -4,8 +4,9 @@ export type ProductCardProps = {
   price: number;
 };
 export type ProductStockCardProps = {
-  id: number;
-  name: string;
-  price: number;
-  inventory: number;
+    productId: number,
+    name: string,
+    basePrice: number,
+    stockQuantity: number,
+    key?: unknown
 }
