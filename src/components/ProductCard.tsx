@@ -10,6 +10,7 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
 
 const ProductCard: React.FC<ProductCardProps> = (props) => {
   const router = useRouter();
@@ -25,9 +26,17 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
         ></div>
         <p className="text-2xl font-bold">${props.price.toFixed(2)}</p>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full hover:scale-105 duration-75 ease-in-out">
+      <CardFooter className="flex justify-between">
+        <Button className="hover:scale-105 duration-75 ease-in-out">
           Add to Cart
+        </Button>
+        <Button
+          variant={"ghost"}
+          size={"icon"}
+          className="hover:scale-105 duration-75 ease-in-out"
+        >
+          <Search className="h-6 w-6" />
+          <span className="sr-only">View Details</span>
         </Button>
       </CardFooter>
     </Card>

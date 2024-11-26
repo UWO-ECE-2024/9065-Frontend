@@ -1,11 +1,21 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
-import { Menu, Search, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import {
+  Menu,
+  Search,
+  ShoppingBag,
+  ShoppingCart,
+  TextSearch,
+  User,
+  X,
+} from "lucide-react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -20,19 +30,63 @@ import {
 } from "./ui/command";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
+import { ScrollArea } from "./ui/scroll-area";
+import { Input } from "./ui/input";
+import { useCategorys } from "@/store/shopping-store";
+
+const initialCartItems = [
+  {
+    id: 1,
+    name: "Classic White T-Shirt",
+    price: 29.99,
+    quantity: 1,
+    image: "/next.svg",
+  },
+  {
+    id: 2,
+    name: "Slim Fit Jeans",
+    price: 59.99,
+    quantity: 2,
+    image: "/next.svg",
+  },
+];
 
 const Navbar = () => {
   const router = useRouter();
+  const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(1);
+  const [cartItems, setCartItems] = useState(initialCartItems);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = [
-    { title: "Brand A's Collection", category: "Brand A" },
-    { title: "Brand B's Collection", category: "Brand B" },
-    { title: "Brand C's Collcation", category: "Brand C" },
-  ];
+  const updateQuantity = useCallback(
+    (id: number, newQuantity: number) => {
+      setCartItems((items) =>
+        items.map((item) =>
+          item.id === id
+            ? { ...item, quantity: Math.max(0, newQuantity) }
+            : item
+        )
+      );
+    },
+    [cartItems]
+  );
+
+  const removeItem = useCallback(
+    (id: number) => {
+      setCartItems((items) => items.filter((item) => item.id !== id));
+    },
+    [cartItems]
+  );
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+  const cartTotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cartItems]
+  );
 
   useEffect(() => {
     // Press cmd+k to open search
@@ -69,7 +123,11 @@ const Navbar = () => {
         }
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden relative  z-10"
+            >
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -79,34 +137,28 @@ const Navbar = () => {
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-4 mt-4">
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand A
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand B
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand C
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand D
-              </Link>
+              {categorys.map((category) => (
+                <Link
+                  key={category.categoryId}
+                  href={`/search?category=${category.name}`}
+                  className="text-lg font-medium"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </nav>
           </SheetContent>
         </Sheet>
         <nav className="hidden md:flex items-center gap-6 mx-6 z-10">
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand A
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand B
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand C
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand D
-          </Link>
+          {categorys.slice(0, 3).map((category) => (
+            <Link
+              key={category.categoryId}
+              href={`/search?category=${category.name}`}
+              className="text-lg font-medium"
+            >
+              {category.name}
+            </Link>
+          ))}
         </nav>
 
         <div className="w-full  absolute flex items-center justify-center flex-1 md:justify-center z-0">
@@ -125,7 +177,7 @@ const Navbar = () => {
             className="relative"
             onClick={() => setIsSearchOpen(true)}
           >
-            <Search className="h-6 w-6" />
+            <TextSearch className="h-6 w-6" />
             <span className="sr-only">Search</span>
           </Button>
 
@@ -151,9 +203,82 @@ const Navbar = () => {
               <SheetHeader>
                 <SheetTitle>Your Cart</SheetTitle>
               </SheetHeader>
-              <div className="mt-4">
-                <p>Your cart items will appear here.</p>
-              </div>
+              <ScrollArea className="h-[calc(100vh-200px)] mt-4">
+                {cartItems.length === 0 ? (
+                  <p className="text-center text-muted-foreground">
+                    Your cart is empty.
+                  </p>
+                ) : (
+                  cartItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center py-4 border-b"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-16 h-16 object-contain mr-4"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          ${item.price.toFixed(2)}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                          >
+                            -
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateQuantity(
+                                item.id,
+                                parseInt(e.target.value, 10)
+                              )
+                            }
+                            className="w-14 mx-2 text-center "
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </ScrollArea>
+              <SheetFooter className="mt-4">
+                <div className="w-full">
+                  <div className="flex justify-between mb-4">
+                    <span>Total:</span>
+                    <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  <SheetClose asChild>
+                    <Button className="w-full">Checkout</Button>
+                  </SheetClose>
+                </div>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
@@ -172,15 +297,16 @@ const Navbar = () => {
           </VisuallyHidden.Root>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
-            {searchResults.map((result) => (
+            {categorys.slice(0, 3).map((result) => (
               <CommandItem
-                key={result.title}
+                key={result.categoryId}
                 onSelect={() => {
                   setIsSearchOpen(false);
                   // Handle navigation or other actions
+                  router.push(`/search?category=${result.name}`);
                 }}
               >
-                <span>{result.title}</span>
+                <span>{result.name}</span>
               </CommandItem>
             ))}
           </CommandGroup>
