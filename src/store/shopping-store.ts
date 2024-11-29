@@ -5,6 +5,16 @@ import { createStore } from "zustand/vanilla";
 
 export const InitState: ShoppingState = {
   categorys: [],
+  user: {
+    userId: 0,
+    email: "",
+    firstName: "",
+    lastName: "",
+  },
+  tokens: {
+    accessToken: "",
+    refreshToken: "",
+  },
 };
 
 export const createShoppingStore = (initState: ShoppingState = InitState) => {
@@ -18,13 +28,27 @@ export const createShoppingStore = (initState: ShoppingState = InitState) => {
               ...state,
               categorys: new_categorys,
             })),
+          updateUser: (new_user) =>
+            set((state) => ({
+              ...state,
+              user: new_user,
+            })),
+          updateTokens: (new_tokens) =>
+            set((state) => ({
+              ...state,
+              tokens: new_tokens,
+            })),
         },
       }),
       {
         name: "shopping-store",
         storage: createJSONStorage(() => sessionStorage),
         partialize: (state) => {
-          return { categorys: state.categorys };
+          return {
+            categorys: state.categorys,
+            user: state.user,
+            tokens: state.tokens,
+          };
         },
       }
     )
@@ -32,3 +56,5 @@ export const createShoppingStore = (initState: ShoppingState = InitState) => {
 };
 export const useActions = () => useShoppingStore((state) => state.actions);
 export const useCategorys = () => useShoppingStore((state) => state.categorys);
+export const useUser = () => useShoppingStore((state) => state.user);
+export const useTokens = () => useShoppingStore((state) => state.tokens);

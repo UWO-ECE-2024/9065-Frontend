@@ -32,7 +32,10 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "./ui/scroll-area";
 import { Input } from "./ui/input";
-import { useCategorys } from "@/store/shopping-store";
+import { useActions, useCategorys } from "@/store/shopping-store";
+import { useQuery } from "@tanstack/react-query";
+import { Category } from "@/types/store";
+import { CategoryService } from "@/services/category.service";
 
 const initialCartItems = [
   {
@@ -58,6 +61,13 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [cartItems, setCartItems] = useState(initialCartItems);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data, isSuccess } = useQuery<{ data: Category[] }>({
+    queryKey: ["categories"],
+    queryFn: CategoryService.fetchCategories,
+    enabled: !categorys.length,
+  });
+  const updateCategory = useActions().setCategorys;
 
   const updateQuantity = useCallback(
     (id: number, newQuantity: number) => {
@@ -114,6 +124,12 @@ const Navbar = () => {
     document.addEventListener("keydown", handleEnterKey);
     return () => document.removeEventListener("keydown", handleEnterKey);
   }, [isSearchOpen, searchQuery, router]);
+
+  useEffect(() => {
+    if (isSuccess && categorys.length === 0) {
+      updateCategory(data.data);
+    }
+  }, [isSuccess]);
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b">
