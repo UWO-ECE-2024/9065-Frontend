@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ProductPageProps } from "@/types/pages";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,12 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { useQuery } from "@tanstack/react-query";
+import { ProductService } from "@/services/product.service";
+import { useParams } from "next/navigation";
+import NotFound from "@/app/not-found";
+import { ProductPageData } from "@/types/request-and-response";
+import { API_URL } from "@/common/config";
 
 const product = {
   name: "Classic Leather Jacket",
@@ -62,9 +68,18 @@ const product = {
   ],
 };
 
-const page = ({ params }: ProductPageProps) => {
+const page = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const params = useParams();
+  const productsInfo = useQuery<{ data: ProductPageData[] }>({
+    queryKey: ["product", params.id],
+    queryFn: () =>
+      ProductService.fetchProductById(
+        Array.isArray(params.id) ? params.id[0] : params.id ?? "0"
+      ),
+    enabled: !!params.id,
+  });
 
   const handleAddToBag = () => {
     if (selectedSize) {
@@ -74,6 +89,15 @@ const page = ({ params }: ProductPageProps) => {
       alert("Please select a size");
     }
   };
+
+  if (productsInfo.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (productsInfo.isError) {
+    NotFound();
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -89,16 +113,15 @@ const page = ({ params }: ProductPageProps) => {
               }}
             >
               <CarouselContent>
-                {product.images.map((src, index) => (
+                {productsInfo.data?.data[0].images.map((src, index) => (
                   <CarouselItem key={index}>
                     <Dialog>
                       <DialogTrigger asChild>
                         <AspectRatio ratio={1 / 1} className="bg-muted">
-                          <Image
-                            src={src}
+                          <img
+                            src={`${API_URL}${src.url}`}
                             alt={`Product image ${index + 1}`}
-                            fill
-                            className="rounded-md object-contain cursor-pointer"
+                            className="rounded-md object-contain cursor-pointer w-full h-full"
                           />
                         </AspectRatio>
                       </DialogTrigger>
@@ -107,11 +130,10 @@ const page = ({ params }: ProductPageProps) => {
                           <DialogTitle>Image</DialogTitle>
                         </VisuallyHidden.Root>
                         <AspectRatio ratio={1 / 1} className="bg-muted">
-                          <Image
-                            src={src}
+                          <img
+                            src={`${API_URL}${src.url}`}
                             alt={`Product image ${index + 1}`}
-                            fill
-                            className="rounded-md object-contain"
+                            className="rounded-md object-contain w-full h-full"
                           />
                         </AspectRatio>
                       </DialogContent>
@@ -119,11 +141,11 @@ const page = ({ params }: ProductPageProps) => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
+              <CarouselPrevious className="z-10" />
+              <CarouselNext className="z-10" />
             </Carousel>
             <div className="flex justify-center mt-4">
-              {product.images.map((_, index) => (
+              {productsInfo.data?.data[0].images.map((_, index) => (
                 <div
                   key={index}
                   className={`w-2 h-2 rounded-full mx-1 ${
@@ -136,12 +158,14 @@ const page = ({ params }: ProductPageProps) => {
 
           {/* Product Info */}
           <div className="w-full lg:w-1/2">
-            <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+            <h1 className="text-3xl font-bold mb-4">
+              {productsInfo.data?.data[0].name}
+            </h1>
             <p className="text-2xl font-semibold mb-4">
-              ${product.price.toFixed(2)}
+              ${productsInfo.data?.data[0].basePrice}
             </p>
             {/* Size Selection */}
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <Select onValueChange={setSelectedSize}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select size" />
@@ -154,7 +178,7 @@ const page = ({ params }: ProductPageProps) => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             {/* Add to Bag Button */}
             <Button onClick={handleAddToBag} className="w-full mb-6">
@@ -167,7 +191,7 @@ const page = ({ params }: ProductPageProps) => {
                 <CardTitle>Product Description</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{product.description}</p>
+                <p>{productsInfo.data?.data[0].description}</p>
               </CardContent>
             </Card>
 

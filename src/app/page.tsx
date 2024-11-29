@@ -7,13 +7,6 @@ import { ProductData } from "@/types/request-and-response";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Home() {
-  const products = [
-    { id: 1, name: "Stylish T-Shirt", price: 29.99 },
-    { id: 2, name: "Comfortable Jeans", price: 59.99 },
-    { id: 3, name: "Classic Sneakers", price: 89.99 },
-    { id: 4, name: "Elegant Watch", price: 129.99 },
-  ];
-
   const getProducts = useQuery<{ data: ProductData[] }>({
     queryKey: ["products"],
     queryFn: ProductService.fetchProducts,

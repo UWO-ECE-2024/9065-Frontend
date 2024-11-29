@@ -10,3 +10,7 @@ export type ProductData = Product & {
   attributes: ProductAttribute[];
   images: ProductImage[];
 };
+
+export type ProductPageData = ProductData & {
+  reviews: ProductReview[];
+};
