@@ -8,5 +8,6 @@ export type ProductStockCardProps = {
     name: string,
     basePrice: number,
     stockQuantity: number,
-    key?: unknown
+    key?: unknown,
+    imageUrl?: string;
 }
