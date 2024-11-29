@@ -75,12 +75,31 @@ const AddItemCard = () => {
     fetchCategories();
   }, []);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    const handleInputChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        if (name === "quantity") {
+            // Convert value to integer for quantity
+            const intValue = parseInt(value, 10);
+            setFormData((prev) => ({
+                ...prev,
+                stock_quantity: intValue || 0 // Fallback to 0 if conversion fails
+            }));
+        } else if (name === "price") {
+            // Handle base_price, ensuring it remains a string
+            setFormData((prev) => ({
+                ...prev,
+                base_price: value
+            }));
+        } else {
+            // Handle all other cases
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
 
   const handleSelectChange = (value: string) => {
     setFormData((prev) => ({ ...prev, category_id: parseInt(value) }));
@@ -244,7 +263,7 @@ const AddItemCard = () => {
                                             <div className="grid w-full max-w-sm items-center gap-1.5">
                                                 <Label htmlFor="quantity">Quantity</Label>
                                                 <Input
-                                                    type="number"
+                                                    type="text"
                                                     id="quantity"
                                                     name="quantity"
                                                     value={formData.stock_quantity}
