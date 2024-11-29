@@ -11,7 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { useCategorys } from "@/store/shopping-store";
 import { Props } from "@/types/pages";
+import { Category } from "@/types/store";
 import React, { useEffect, useState } from "react";
 
 const initialProducts = [
@@ -25,16 +27,15 @@ const initialProducts = [
   { id: 8, name: "Sunglasses", price: 29.99, category: "Accessories" },
 ];
 
-const categories = ["Clothing", "Accessories", "Footwear", "Electronics"];
-
 const ContentPage = (props: Props) => {
   const [title, setTitle] = useState("Search Results");
   const [products, setProducts] = useState(initialProducts);
   const [priceRange, setPriceRange] = useState([0, 200]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [sortOrder, setSortOrder] = useState("relevance");
+  const categories = useCategorys();
 
-  const handleCategoryChange = (category: string) => {
+  const handleCategoryChange = (category: Category) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
@@ -50,30 +51,30 @@ const ContentPage = (props: Props) => {
     setSortOrder(value);
   };
 
-  useEffect(() => {
-    let filteredProducts = initialProducts.filter(
-      (product) =>
-        (selectedCategories.length === 0 ||
-          selectedCategories.includes(product.category)) &&
-        product.price >= priceRange[0] &&
-        product.price <= priceRange[1]
-    );
+  // useEffect(() => {
+  //   let filteredProducts = initialProducts.filter(
+  //     (product) =>
+  //       (selectedCategories.length === 0 ||
+  //         selectedCategories.includes(product.category.)) &&
+  //       product.price >= priceRange[0] &&
+  //       product.price <= priceRange[1]
+  //   );
 
-    switch (sortOrder) {
-      case "price-asc":
-        filteredProducts.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        filteredProducts.sort((a, b) => b.price - a.price);
-        break;
-      case "name":
-        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      // 'relevance' is default, no sorting needed
-    }
+  //   switch (sortOrder) {
+  //     case "price-asc":
+  //       filteredProducts.sort((a, b) => a.price - b.price);
+  //       break;
+  //     case "price-desc":
+  //       filteredProducts.sort((a, b) => b.price - a.price);
+  //       break;
+  //     case "name":
+  //       filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+  //       break;
+  //     // 'relevance' is default, no sorting needed
+  //   }
 
-    setProducts(filteredProducts);
-  }, [selectedCategories, priceRange, sortOrder]);
+  //   setProducts(filteredProducts);
+  // }, [selectedCategories, priceRange, sortOrder]);
 
   const cateTitle = async () => {
     const cate = (await props.searchParams).category;
@@ -99,19 +100,19 @@ const ContentPage = (props: Props) => {
                 <h2 className="text-lg font-semibold mb-2">Categories</h2>
                 {categories.map((category) => (
                   <div
-                    key={category}
+                    key={category.categoryId}
                     className="flex items-center space-x-2 mb-2"
                   >
                     <Checkbox
-                      id={category}
+                      id={category.categoryId.toString()}
                       checked={selectedCategories.includes(category)}
                       onCheckedChange={() => handleCategoryChange(category)}
                     />
                     <label
-                      htmlFor={category}
+                      htmlFor={category.name}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      {category}
+                      {category.name}
                     </label>
                   </div>
                 ))}

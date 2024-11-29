@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import SimpleNavbar from "@/components/SimpleNavbar";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/common/config";
 
 interface UserProfile {
   userId: number;
@@ -73,7 +74,7 @@ export default function UserCenterPage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("http://localhost:3000/v1/profile", {
+      const response = await fetch(`${API_URL}/v1/profile`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -100,7 +101,7 @@ export default function UserCenterPage() {
 
   const fetchAddresses = async () => {
     try {
-      const response = await fetch("http://localhost:3000/v1/profile/addresses", {
+      const response = await fetch(`${API_URL}/v1/profile/addresses`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -123,7 +124,7 @@ export default function UserCenterPage() {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/v1/profile", {
+      const response = await fetch(`${API_URL}/v1/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -144,8 +145,8 @@ export default function UserCenterPage() {
     e.preventDefault();
     try {
       const url = editingAddressId
-        ? `http://localhost:3000/v1/profile/addresses/${editingAddressId}`
-        : "http://localhost:3000/v1/profile/addresses";
+        ? `${API_URL}/v1/profile/addresses/${editingAddressId}`
+        : `${API_URL}/v1/profile/addresses`;
 
       const response = await fetch(url, {
         method: editingAddressId ? "PUT" : "POST",
@@ -176,7 +177,7 @@ export default function UserCenterPage() {
   const handleDeleteAddress = async (addressId: number) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/v1/profile/addresses/${addressId}`,
+        `${API_URL}/v1/profile/addresses/${addressId}`,
         {
           method: "DELETE",
           headers: {
