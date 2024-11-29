@@ -1,7 +1,5 @@
 export type ProductPageProps = {
-  params: {
-    name: string;
-  };
+  params: Promise<{ id: string }>;
 };
 
 export type Props = {

@@ -28,7 +28,7 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
       <CardContent>
         <div
           className="aspect-square bg-gray-200 rounded-md mb-4 hover:scale-105 duration-100 cursor-pointer"
-          onClick={() => router.push(`/product/${props.name}`)}
+          onClick={() => router.push(`/product/${props.productId}`)}
         >
           <img
             src={`${API_URL}${primaryImage}`}

@@ -50,3 +50,9 @@ export type ProductImage = {
   displayOrder: number;
   isPrimary: boolean;
 };
+
+export type ProductReview = {
+  reviewId: number;
+  rating: number;
+  comment: string;
+};
