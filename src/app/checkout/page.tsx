@@ -17,37 +17,25 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { update_tokens } from "@/lib/utils";
 import { userService } from "@/services/user.service";
-import { useActions, useCart, useTokens } from "@/store/shopping-store";
+import {
+  useActions,
+  useCart,
+  useTokens,
+  useUser,
+} from "@/store/shopping-store";
 import { Address } from "@/types/request-and-response";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-import { Router } from "next/router";
-import React, { useCallback, useEffect, useState } from "react";
-
-// Mock data for saved addresses and cart items
-const initialSavedAddresses = [
-  {
-    id: 1,
-    name: "John Doe",
-    address: "123 Main St",
-    city: "Anytown",
-    state: "AT",
-    zipCode: "12345",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    address: "456 Elm St",
-    city: "Othertown",
-    state: "OT",
-    zipCode: "67890",
-  },
-];
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 const page = () => {
   const cart = useCart();
-  // const tokens = useTokens();
+  const tokens = useTokens();
+  const router = useRouter();
+  const user = useUser();
   const updateTokens = useActions().updateTokens;
+  const updateCart = useActions().updateCart;
   const [refreshFlag, setRefreshFlag] = useState(false);
   const refreshToken = useMutation({
     mutationKey: ["refreshToken", localStorage.getItem("refreshToken")],
@@ -77,9 +65,20 @@ const page = () => {
     postalCode: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
+  const [creditCard, setCreditCard] = useState({
+    cardNumber: "",
+    holderName: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
+  });
   const addressList = useQuery<{ data: Address[] }>({
     queryKey: ["addresses"],
     queryFn: () => userService.addressList(localStorage.getItem("token") || ""),
+  });
+  const checkout = useMutation({
+    mutationKey: ["checkout"],
+    mutationFn: userService.checkout,
   });
 
   const subtotal = cart.reduce(
@@ -89,6 +88,11 @@ const page = () => {
   const taxRate = 0.08; // 8% tax rate (you would typically calculate this based on the address)
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
+
+  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCreditCard((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -216,11 +220,52 @@ const page = () => {
     e.preventDefault();
     // Here you would typically send the order data to your backend
     console.log("Order submitted", {
-      selectedAddress,
-      newAddress,
+      products: cart,
+      address: selectedAddress,
       paymentMethod,
-      total,
+      creditCard,
+      userId: user.userId,
     });
+    checkout.mutate(
+      {
+        products: cart,
+        addressId: selectedAddress === "new" ? 0 : selectedAddress,
+        token: localStorage.getItem("token") || "",
+        paymentMethod:
+          paymentMethod === "credit-card"
+            ? {
+                cardType: creditCard.cardNumber.startsWith("4")
+                  ? "Visa"
+                  : creditCard.cardNumber.startsWith("5")
+                  ? "MasterCard"
+                  : "UnionPay",
+                lastFour: creditCard.cardNumber,
+                holderName: creditCard.holderName,
+                expiryDate: `${creditCard.expiryMonth}/${creditCard.expiryYear}`,
+              }
+            : 0,
+        userId: user.userId,
+        email: user.email,
+      },
+      {
+        onSuccess: (data) => {
+          toast({
+            title: "Success",
+            description: "Order placed successfully",
+          });
+          localStorage.setItem("order", JSON.stringify(data.data));
+          updateCart([]);
+          router.push("/checkout-success");
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   const handleRefreshToken = async () => {
@@ -449,10 +494,10 @@ const page = () => {
                     />
                     <Label htmlFor="payment-credit-card">Credit Card</Label>
                   </div>
-                  <div className="flex items-center space-x-2 mb-2">
+                  {/* <div className="flex items-center space-x-2 mb-2">
                     <RadioGroupItem value="paypal" id="payment-paypal" />
                     <Label htmlFor="payment-paypal">PayPal</Label>
-                  </div>
+                  </div> */}
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="cash" id="payment-cash" />
                     <Label htmlFor="payment-cash">Cash on Delivery</Label>
@@ -464,14 +509,33 @@ const page = () => {
                       <Label htmlFor="card-number">Card Number</Label>
                       <Input
                         id="card-number"
+                        name="cardNumber"
                         placeholder="1234 5678 9012 3456"
+                        required
+                        onChange={handleCardChange}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="holder-name">Holder Name</Label>
+                      <Input
+                        id="holder-name"
+                        name="holderName"
+                        placeholder="AAA BBB"
+                        onChange={handleCardChange}
                         required
                       />
                     </div>
                     <div className="grid gap-2 md:grid-cols-3">
                       <div>
                         <Label htmlFor="expiry-month">Expiry Month</Label>
-                        <Select>
+                        <Select
+                          onValueChange={(value) =>
+                            setCreditCard((prev) => ({
+                              ...prev,
+                              expiryMonth: value.padStart(2, "0"),
+                            }))
+                          }
+                        >
                           <SelectTrigger id="expiry-month">
                             <SelectValue placeholder="Month" />
                           </SelectTrigger>
@@ -491,13 +555,20 @@ const page = () => {
                       </div>
                       <div>
                         <Label htmlFor="expiry-year">Expiry Year</Label>
-                        <Select>
+                        <Select
+                          onValueChange={(value) => {
+                            setCreditCard((prev) => ({
+                              ...prev,
+                              expiryYear: value,
+                            }));
+                          }}
+                        >
                           <SelectTrigger id="expiry-year">
                             <SelectValue placeholder="Year" />
                           </SelectTrigger>
                           <SelectContent>
                             {Array.from(
-                              { length: 10 },
+                              { length: 20 },
                               (_, i) => new Date().getFullYear() + i
                             ).map((year) => (
                               <SelectItem key={year} value={year.toString()}>
@@ -509,7 +580,14 @@ const page = () => {
                       </div>
                       <div>
                         <Label htmlFor="cvv">CVV</Label>
-                        <Input id="cvv" placeholder="123" required />
+                        <Input
+                          id="cvv"
+                          type="password"
+                          name="cvv"
+                          placeholder="123"
+                          onChange={handleCardChange}
+                          required
+                        />
                       </div>
                     </div>
                   </div>

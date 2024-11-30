@@ -8,6 +8,7 @@ export type ShoppingState = {
     email: string;
     firstName: string;
     lastName: string;
+    phoneNumber?: string;
   };
   tokens: {
     accessToken: string;

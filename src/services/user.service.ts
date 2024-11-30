@@ -1,4 +1,6 @@
 import { request } from "@/lib/utils";
+import { ProductData } from "@/types/request-and-response";
+import { CartItem, Product } from "@/types/store";
 
 export const userService = {
   addressList: async (token: string) =>
@@ -64,4 +66,33 @@ export const userService = {
       path: `/v1/profile/addresses/${data.addressId}`,
       token: data.token,
     }),
+
+  checkout: async (data: {
+    products: CartItem[];
+    token: string;
+    paymentMethod:
+      | 0
+      | {
+          cardType: string; // Assuming paymentMethod has these properties
+          lastFour: string;
+          holderName: string;
+          expiryDate: string;
+        };
+    addressId: number;
+    userId: number;
+    email: string;
+  }) => {
+    return await request({
+      method: "POST",
+      path: "/v1/cart/checkout",
+      data: {
+        products: data.products,
+        paymentMethod: data.paymentMethod,
+        addressId: data.addressId,
+        userId: data.userId,
+        email: data.email,
+      },
+      token: data.token,
+    });
+  },
 };
