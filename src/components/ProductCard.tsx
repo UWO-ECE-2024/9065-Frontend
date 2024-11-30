@@ -17,7 +17,9 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
   const router = useRouter();
 
   const primaryImage = useMemo(() => {
-    return props.images.find((image) => image.isPrimary)?.url;
+    return props.images
+      ? props.images.find((image) => image.isPrimary)?.url
+      : "";
   }, [props.images]);
 
   return (

@@ -11,31 +11,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { ProductService } from "@/services/product.service";
 import { useCategorys } from "@/store/shopping-store";
 import { Props } from "@/types/pages";
+import { ProductData } from "@/types/request-and-response";
 import { Category } from "@/types/store";
+import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-
-const initialProducts = [
-  { id: 1, name: "Classic T-Shirt", price: 19.99, category: "Clothing" },
-  { id: 2, name: "Leather Wallet", price: 39.99, category: "Accessories" },
-  { id: 3, name: "Running Shoes", price: 79.99, category: "Footwear" },
-  { id: 4, name: "Wireless Earbuds", price: 99.99, category: "Electronics" },
-  { id: 5, name: "Denim Jeans", price: 59.99, category: "Clothing" },
-  { id: 6, name: "Smartwatch", price: 199.99, category: "Electronics" },
-  { id: 7, name: "Backpack", price: 49.99, category: "Accessories" },
-  { id: 8, name: "Sunglasses", price: 29.99, category: "Accessories" },
-];
 
 const ContentPage = (props: Props) => {
   const [title, setTitle] = useState("Search Results");
-  const [products, setProducts] = useState(initialProducts);
   const [priceRange, setPriceRange] = useState([0, 200]);
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [sortOrder, setSortOrder] = useState("relevance");
   const categories = useCategorys();
+  const [queryParams, setQueryParams] = useState({
+    category: "",
+    query: "",
+    stale: false,
+  });
+  const [modifyProducts, setModifyProducts] = useState<ProductData[]>([]);
+  const searchResults = useQuery<{ data: ProductData[] }>({
+    queryKey: ["search", queryParams],
+    queryFn: () =>
+      ProductService.searchProducts({
+        query: queryParams.query,
+        category: queryParams.category,
+      }),
+    enabled: queryParams.stale,
+  });
 
-  const handleCategoryChange = (category: Category) => {
+  const handleCategoryChange = (category:number) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
@@ -51,41 +57,63 @@ const ContentPage = (props: Props) => {
     setSortOrder(value);
   };
 
-  // useEffect(() => {
-  //   let filteredProducts = initialProducts.filter(
-  //     (product) =>
-  //       (selectedCategories.length === 0 ||
-  //         selectedCategories.includes(product.category.)) &&
-  //       product.price >= priceRange[0] &&
-  //       product.price <= priceRange[1]
-  //   );
+  useEffect(() => {
+    let filteredProducts = searchResults.data?.data || [];
+    filteredProducts = filteredProducts.filter(
+      (product) =>
+        (selectedCategories.length === 0 ||
+          selectedCategories.includes(product.categoryId)) &&
+        Number(product.basePrice) >= priceRange[0] &&
+        Number(product.basePrice) <= priceRange[1]
+    );
 
-  //   switch (sortOrder) {
-  //     case "price-asc":
-  //       filteredProducts.sort((a, b) => a.price - b.price);
-  //       break;
-  //     case "price-desc":
-  //       filteredProducts.sort((a, b) => b.price - a.price);
-  //       break;
-  //     case "name":
-  //       filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-  //       break;
-  //     // 'relevance' is default, no sorting needed
-  //   }
+    switch (sortOrder) {
+      case "price-asc":
+        filteredProducts.sort((a, b) => Number(a.basePrice) - Number(b.basePrice));
+        break;
+      case "price-desc":
+        filteredProducts.sort((a, b) => Number(b.basePrice) - Number(a.basePrice));
+        break;
+      case "name":
+        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      // 'relevance' is default, no sorting needed
+    }
 
-  //   setProducts(filteredProducts);
-  // }, [selectedCategories, priceRange, sortOrder]);
+    setModifyProducts(filteredProducts);
+  }, [selectedCategories, priceRange, sortOrder,searchResults.data]);
 
   const cateTitle = async () => {
     const cate = (await props.searchParams).category;
+    const query = (await props.searchParams).query;
+
     if (cate) {
       setTitle(`${cate} Products`);
     }
+    if (cate === undefined) {
+      setTitle("Search Results");
+    }
+    setQueryParams({
+      category: cate as string,
+      query: Array.isArray(query) ? query.join(", ") : query ?? "",
+      stale: true,
+    });
   };
 
   useEffect(() => {
     cateTitle();
-  }, [props.searchParams]);
+  }, [props.searchParams, searchResults.isFetched]);
+
+
+  useEffect(() => {
+    if (searchResults.isSuccess && searchResults.data.data.length > 0) {
+      setModifyProducts(searchResults.data.data);
+      let pricePeak = Math.max(
+        ...searchResults.data.data.map((product) => Number(product.basePrice))
+      );
+      setPriceRange([0, pricePeak]);
+    }
+  }, [searchResults.isSuccess]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -105,8 +133,8 @@ const ContentPage = (props: Props) => {
                   >
                     <Checkbox
                       id={category.categoryId.toString()}
-                      checked={selectedCategories.includes(category)}
-                      onCheckedChange={() => handleCategoryChange(category)}
+                      checked={selectedCategories.includes(category.categoryId)}
+                      onCheckedChange={() => handleCategoryChange(category.categoryId)}
                     />
                     <label
                       htmlFor={category.name}
@@ -121,7 +149,7 @@ const ContentPage = (props: Props) => {
                 <h2 className="text-lg font-semibold mb-2">Price Range</h2>
                 <Slider
                   min={0}
-                  max={200}
+                  max={priceRange[1]}
                   step={1}
                   value={priceRange}
                   onValueChange={handlePriceChange}
@@ -151,8 +179,19 @@ const ContentPage = (props: Props) => {
               </Select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} {...product} />
+              {searchResults.isFetched &&
+                searchResults.data?.data.length === 0 && (
+                  <div className="text-center py-10">
+                    <h2 className="text-2xl font-semibold mb-2">
+                      No results found
+                    </h2>
+                    <p className="text-gray-600">
+                      Try adjusting your search or filter criteria
+                    </p>
+                  </div>
+                )}
+              {modifyProducts.map((product) => (
+                <ProductCard key={product.productId} {...product} />
               ))}
             </div>
           </main>
