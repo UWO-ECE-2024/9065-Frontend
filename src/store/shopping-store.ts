@@ -5,6 +5,7 @@ import { createStore } from "zustand/vanilla";
 
 export const InitState: ShoppingState = {
   categorys: [],
+  cart: [],
   user: {
     userId: 0,
     email: "",
@@ -38,6 +39,11 @@ export const createShoppingStore = (initState: ShoppingState = InitState) => {
               ...state,
               tokens: new_tokens,
             })),
+          updateCart: (new_cart) =>
+            set((state) => ({
+              ...state,
+              cart: new_cart,
+            })),
         },
       }),
       {
@@ -48,6 +54,7 @@ export const createShoppingStore = (initState: ShoppingState = InitState) => {
             categorys: state.categorys,
             user: state.user,
             tokens: state.tokens,
+            cart: state.cart,
           };
         },
       }
@@ -58,3 +65,4 @@ export const useActions = () => useShoppingStore((state) => state.actions);
 export const useCategorys = () => useShoppingStore((state) => state.categorys);
 export const useUser = () => useShoppingStore((state) => state.user);
 export const useTokens = () => useShoppingStore((state) => state.tokens);
+export const useCart = () => useShoppingStore((state) => state.cart);
