@@ -1,6 +1,6 @@
 "use client";
 import { ProductCardProps } from "@/types/components";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -12,15 +12,35 @@ import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { API_URL } from "@/common/config";
+import { useActions, useCart } from "@/store/shopping-store";
 
 const ProductCard: React.FC<ProductCardProps> = (props) => {
   const router = useRouter();
+  const updateCart = useActions().updateCart;
+  const cart = useCart();
 
   const primaryImage = useMemo(() => {
     return props.images
       ? props.images.find((image) => image.isPrimary)?.url
       : "";
   }, [props.images]);
+
+  const handleAddToCart = useCallback(() => {
+    const productInCart = cart.find(
+      (item) => item.productId === props.productId
+    );
+    if (productInCart) {
+      updateCart(
+        cart.map((item) =>
+          item.productId === props.productId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      updateCart([...cart, { ...props, quantity: 1 }]);
+    }
+  }, [props]);
 
   return (
     <Card>
@@ -41,13 +61,17 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
         <p className="text-2xl font-bold">${props.basePrice}</p>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button className="hover:scale-105 duration-75 ease-in-out">
+        <Button
+          className="hover:scale-105 duration-75 ease-in-out"
+          onClick={handleAddToCart}
+        >
           Add to Cart
         </Button>
         <Button
           variant={"ghost"}
           size={"icon"}
           className="hover:scale-105 duration-75 ease-in-out"
+          onClick={() => router.push(`/product/${props.productId}`)}
         >
           <Search className="h-6 w-6" />
           <span className="sr-only">View Details</span>

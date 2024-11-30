@@ -1,5 +1,8 @@
+import { ProductData } from "./request-and-response";
+
 export type ShoppingState = {
   categorys: Category[];
+  cart: CartItem[];
   user: {
     userId: number;
     email: string;
@@ -17,6 +20,7 @@ export type ShoppingAction = {
     setCategorys: (categorys: Category[]) => void;
     updateUser: (user: ShoppingState["user"]) => void;
     updateTokens: (tokens: ShoppingState["tokens"]) => void;
+    updateCart: (cart: ShoppingState["cart"]) => void;
   };
 };
 
@@ -56,3 +60,5 @@ export type ProductReview = {
   rating: number;
   comment: string;
 };
+
+export type CartItem = ProductData & { quantity: number };

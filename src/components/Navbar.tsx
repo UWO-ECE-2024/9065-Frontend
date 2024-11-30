@@ -32,34 +32,19 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "./ui/scroll-area";
 import { Input } from "./ui/input";
-import { useActions, useCategorys } from "@/store/shopping-store";
+import { useActions, useCart, useCategorys } from "@/store/shopping-store";
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@/types/store";
 import { CategoryService } from "@/services/category.service";
-
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Classic White T-Shirt",
-    price: 29.99,
-    quantity: 1,
-    image: "/next.svg",
-  },
-  {
-    id: 2,
-    name: "Slim Fit Jeans",
-    price: 59.99,
-    quantity: 2,
-    image: "/next.svg",
-  },
-];
+import { API_URL } from "@/common/config";
 
 const Navbar = () => {
   const router = useRouter();
   const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const cart = useCart();
+  const updateCart = useActions().updateCart;
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isSuccess } = useQuery<{ data: Category[] }>({
@@ -69,33 +54,38 @@ const Navbar = () => {
   });
   const updateCategory = useActions().setCategorys;
 
-  const updateQuantity = useCallback(
-    (id: number, newQuantity: number) => {
-      setCartItems((items) =>
-        items.map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(0, newQuantity) }
-            : item
+  const updateCartItemsQuantity = useCallback(
+    (id: number, quantity: number) => {
+      if (quantity === 0) {
+        removeItem(id);
+      }
+      updateCart(
+        cart.map((item) =>
+          item.productId === id ? { ...item, quantity } : item
         )
       );
     },
-    [cartItems]
+    [cart]
   );
 
   const removeItem = useCallback(
     (id: number) => {
-      setCartItems((items) => items.filter((item) => item.id !== id));
+      updateCart(cart.filter((item) => item.productId !== id));
     },
-    [cartItems]
+    [cart]
   );
 
   const cartCount = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
+    () => cart.reduce((sum, item) => sum + item.quantity, 0),
+    [cart]
   );
   const cartTotal = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [cartItems]
+    () =>
+      cart.reduce(
+        (sum, item) => sum + Number(item.basePrice) * item.quantity,
+        0
+      ),
+    [cart]
   );
 
   useEffect(() => {
@@ -221,32 +211,35 @@ const Navbar = () => {
                 <SheetTitle>Your Cart</SheetTitle>
               </SheetHeader>
               <ScrollArea className="h-[calc(100vh-200px)] mt-4">
-                {cartItems.length === 0 ? (
+                {cart.length === 0 ? (
                   <p className="text-center text-muted-foreground">
                     Your cart is empty.
                   </p>
                 ) : (
-                  cartItems.map((item) => (
+                  cart.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.productId}
                       className="flex items-center py-4 border-b"
                     >
                       <img
-                        src={item.image}
+                        src={`${API_URL}item.images[0].url`}
                         alt={item.name}
                         className="w-16 h-16 object-contain mr-4"
                       />
                       <div className="flex-1">
                         <h3 className="font-medium">{item.name}</h3>
                         <p className="text-sm text-muted-foreground">
-                          ${item.price.toFixed(2)}
+                          ${item.basePrice}
                         </p>
                         <div className="flex items-center mt-2">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
+                              updateCartItemsQuantity(
+                                item.productId,
+                                item.quantity - 1
+                              )
                             }
                           >
                             -
@@ -256,9 +249,9 @@ const Navbar = () => {
                             min="0"
                             value={item.quantity}
                             onChange={(e) =>
-                              updateQuantity(
-                                item.id,
-                                parseInt(e.target.value, 10)
+                              updateCartItemsQuantity(
+                                item.productId,
+                                parseInt(e.target.value)
                               )
                             }
                             className="w-14 mx-2 text-center "
@@ -267,7 +260,10 @@ const Navbar = () => {
                             variant="outline"
                             size="icon"
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
+                              updateCartItemsQuantity(
+                                item.productId,
+                                item.quantity + 1
+                              )
                             }
                           >
                             +
@@ -277,7 +273,7 @@ const Navbar = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item.productId)}
                       >
                         <X className="h-4 w-4" />
                       </Button>
