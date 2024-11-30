@@ -11,6 +11,7 @@ export const request = async ({
   method = "GET",
   path = "",
   data,
+  token,
 }: CustomRequest) => {
   // const baseUrl = process.env.API_URL;
   const baseUrl = API_URL;
@@ -18,6 +19,7 @@ export const request = async ({
   let response;
   const headers = {
     "Content-Type": "application/json",
+    Authorization: "Bearer " + token || "",
   };
   if (method === "GET") {
     response = await fetch(`${baseUrl}${path}`, {
@@ -39,4 +41,12 @@ export const request = async ({
     throw new Error("No data found");
   }
   return responseData;
+};
+
+export const update_tokens = (data: {
+  accessToken: string;
+  refreshToken: string;
+}) => {
+  localStorage.setItem("token", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
 };

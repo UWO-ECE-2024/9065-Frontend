@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL } from "@/common/config";
+import { useToast } from "@/hooks/use-toast";
 
 interface RegisterResponse {
   message: string;
@@ -35,6 +36,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,6 +73,11 @@ export default function RegisterPage() {
       router.push("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

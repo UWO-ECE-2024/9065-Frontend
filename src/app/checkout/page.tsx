@@ -14,8 +14,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { update_tokens } from "@/lib/utils";
+import { userService } from "@/services/user.service";
+import { useActions, useCart, useTokens } from "@/store/shopping-store";
+import { Address } from "@/types/request-and-response";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-import React, { useState } from "react";
+import { Router } from "next/router";
+import React, { useCallback, useEffect, useState } from "react";
 
 // Mock data for saved addresses and cart items
 const initialSavedAddresses = [
@@ -37,26 +44,46 @@ const initialSavedAddresses = [
   },
 ];
 
-const cartItems = [
-  { id: 1, name: "Classic T-Shirt", price: 29.99, quantity: 2 },
-  { id: 2, name: "Denim Jeans", price: 59.99, quantity: 1 },
-];
-
 const page = () => {
-  const [savedAddresses, setSavedAddresses] = useState(initialSavedAddresses);
+  const cart = useCart();
+  // const tokens = useTokens();
+  const updateTokens = useActions().updateTokens;
+  const [refreshFlag, setRefreshFlag] = useState(false);
+  const refreshToken = useMutation({
+    mutationKey: ["refreshToken", localStorage.getItem("refreshToken")],
+    mutationFn: userService.refreshToken,
+  });
+  const addAddress = useMutation({
+    mutationKey: ["addAddress"],
+    mutationFn: userService.addAddress,
+  });
+  const updateAddress = useMutation({
+    mutationKey: ["updateAddress"],
+    mutationFn: userService.updateAddress,
+  });
+  const deleteAddress = useMutation({
+    mutationKey: ["deleteAddress"],
+    mutationFn: userService.deleteAddress,
+  });
+  const { toast } = useToast();
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | "new">("new");
   const [editingAddress, setEditingAddress] = useState<number | null>(null);
   const [newAddress, setNewAddress] = useState({
-    name: "",
-    address: "",
+    country: "",
+    streetAddress: "",
     city: "",
     state: "",
-    zipCode: "",
+    postalCode: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
+  const addressList = useQuery<{ data: Address[] }>({
+    queryKey: ["addresses"],
+    queryFn: () => userService.addressList(localStorage.getItem("token") || ""),
+  });
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const subtotal = cart.reduce(
+    (sum, item) => sum + Number(item.basePrice) * item.quantity,
     0
   );
   const taxRate = 0.08; // 8% tax rate (you would typically calculate this based on the address)
@@ -68,7 +95,7 @@ const page = () => {
     if (editingAddress !== null) {
       setSavedAddresses((addresses) =>
         addresses.map((addr) =>
-          addr.id === editingAddress ? { ...addr, [name]: value } : addr
+          addr.addressId === editingAddress ? { ...addr, [name]: value } : addr
         )
       );
     } else {
@@ -81,24 +108,104 @@ const page = () => {
     setSelectedAddress(id);
   };
 
-  const handleSaveAddress = () => {
+  const handleSaveAddress = async () => {
     if (editingAddress !== null) {
+      const oldAddress = savedAddresses.find(
+        (addr) => addr.addressId === editingAddress
+      );
+      updateAddress.mutateAsync(
+        {
+          addressId: editingAddress,
+          streetAddress: oldAddress?.streetAddress ?? "",
+          city: oldAddress?.city ?? "",
+          state: oldAddress?.state ?? "",
+          postalCode: oldAddress?.postalCode ?? "",
+          country: oldAddress?.country ?? "",
+          isDefault: oldAddress?.isDefault ?? false,
+          token: localStorage.getItem("token") || "",
+        },
+        {
+          onSuccess: () => {
+            addressList.refetch();
+          },
+          onError: (error) => {
+            setRefreshFlag(false);
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          },
+        }
+      );
       setEditingAddress(null);
     } else {
-      setSavedAddresses((prev) => [...prev, { id: Date.now(), ...newAddress }]);
+      if (savedAddresses.length === 3) {
+        toast({
+          title: "Error",
+          description: "You can only save up to 3 addresses",
+        });
+        setNewAddress({
+          country: "",
+          streetAddress: "",
+          city: "",
+          state: "",
+          postalCode: "",
+        });
+        return;
+      }
+      await addAddress.mutateAsync(
+        {
+          streetAddress: newAddress.streetAddress,
+          city: newAddress.city,
+          state: newAddress.state,
+          postalCode: newAddress.postalCode,
+          country: newAddress.country,
+          isDefault: false,
+          token: localStorage.getItem("token") || "",
+        },
+        {
+          onSuccess: () => {
+            addressList.refetch();
+          },
+          onError: (error) => {
+            setRefreshFlag(false);
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          },
+        }
+      );
       setNewAddress({
-        name: "",
-        address: "",
+        country: "",
+        streetAddress: "",
         city: "",
         state: "",
-        zipCode: "",
+        postalCode: "",
       });
     }
   };
 
   const handleDeleteAddress = (id: number) => {
-    setSavedAddresses((addresses) =>
-      addresses.filter((addr) => addr.id !== id)
+    deleteAddress.mutate(
+      {
+        addressId: id,
+        token: localStorage.getItem("token") || "",
+      },
+      {
+        onSuccess: () => {
+          addressList.refetch();
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
     );
     if (selectedAddress === id) {
       setSelectedAddress("new");
@@ -115,6 +222,38 @@ const page = () => {
       total,
     });
   };
+
+  const handleRefreshToken = async () => {
+    await refreshToken.mutateAsync(
+      {
+        refreshToken: localStorage.getItem("refreshToken") || "",
+      },
+      {
+        onSuccess: (data) => {
+          updateTokens(data.data.tokens);
+          update_tokens(data.data.tokens);
+          setRefreshFlag(!refreshFlag);
+        },
+      }
+    );
+  };
+
+  useEffect(() => {
+    !refreshFlag && handleRefreshToken();
+  }, [refreshFlag]);
+
+  useEffect(() => {
+    if (addressList.isError) {
+      toast({
+        title: "Error",
+        description: "Failed to load addresses",
+        variant: "destructive",
+      });
+    }
+    if (addressList.isFetched) {
+      setSavedAddresses(addressList.data?.data || []);
+    }
+  }, [addressList.isError, addressList.isFetched]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -135,49 +274,49 @@ const page = () => {
                     setEditingAddress(null);
                   }}
                 >
-                  {savedAddresses.map((address) => (
+                  {addressList.data?.data.map((address) => (
                     <div
-                      key={address.id}
+                      key={address.addressId}
                       className="flex items-center justify-between mb-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem
-                          value={address.id.toString()}
-                          id={`address-${address.id}`}
+                          value={address.addressId.toString()}
+                          id={`address-${address.addressId}`}
                         />
-                        <Label htmlFor={`address-${address.id}`}>
-                          {editingAddress === address.id ? (
+                        <Label htmlFor={`address-${address.addressId}`}>
+                          {editingAddress === address.addressId ? (
                             <Input
-                              name="name"
-                              value={address.name}
+                              name="country"
+                              defaultValue={address.country}
                               onChange={handleAddressChange}
                               className="mb-2"
                             />
                           ) : (
-                            address.name
+                            address.country
                           )}
-                          {editingAddress === address.id ? (
+                          {editingAddress === address.addressId ? (
                             <>
                               <Input
-                                name="address"
-                                value={address.address}
+                                name="streetAddress"
+                                defaultValue={address.streetAddress}
                                 onChange={handleAddressChange}
                                 className="mb-2"
                               />
                               <div className="grid grid-cols-3 gap-2">
                                 <Input
                                   name="city"
-                                  value={address.city}
+                                  defaultValue={address.city}
                                   onChange={handleAddressChange}
                                 />
                                 <Input
                                   name="state"
-                                  value={address.state}
+                                  defaultValue={address.state}
                                   onChange={handleAddressChange}
                                 />
                                 <Input
-                                  name="zipCode"
-                                  value={address.zipCode}
+                                  name="postalCode"
+                                  defaultValue={address.postalCode}
                                   onChange={handleAddressChange}
                                 />
                               </div>
@@ -185,14 +324,14 @@ const page = () => {
                           ) : (
                             <>
                               {" "}
-                              - {address.address}, {address.city},{" "}
-                              {address.state} {address.zipCode}
+                              - {address.streetAddress}, {address.city},{" "}
+                              {address.state} {address.postalCode}
                             </>
                           )}
                         </Label>
                       </div>
                       <div>
-                        {editingAddress === address.id ? (
+                        {editingAddress === address.addressId ? (
                           <Button
                             type="button"
                             onClick={handleSaveAddress}
@@ -204,7 +343,9 @@ const page = () => {
                           <>
                             <Button
                               type="button"
-                              onClick={() => handleEditAddress(address.id)}
+                              onClick={() =>
+                                handleEditAddress(address.addressId)
+                              }
                               size="icon"
                               variant="ghost"
                             >
@@ -212,7 +353,9 @@ const page = () => {
                             </Button>
                             <Button
                               type="button"
-                              onClick={() => handleDeleteAddress(address.id)}
+                              onClick={() =>
+                                handleDeleteAddress(address.addressId)
+                              }
                               size="icon"
                               variant="ghost"
                             >
@@ -231,21 +374,21 @@ const page = () => {
                 {selectedAddress === "new" && (
                   <div className="mt-4 space-y-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="name">Full Name</Label>
+                      <Label htmlFor="country">Country</Label>
                       <Input
-                        id="name"
-                        name="name"
-                        value={newAddress.name}
+                        id="country"
+                        name="country"
+                        value={newAddress.country}
                         onChange={handleAddressChange}
                         required
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="address">Address</Label>
+                      <Label htmlFor="streetAddress">Address</Label>
                       <Input
-                        id="address"
-                        name="address"
-                        value={newAddress.address}
+                        id="streetAddress"
+                        name="streetAddress"
+                        value={newAddress.streetAddress}
                         onChange={handleAddressChange}
                         required
                       />
@@ -272,11 +415,11 @@ const page = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="zipCode">ZIP Code</Label>
+                        <Label htmlFor="postalCode">Postal Code</Label>
                         <Input
-                          id="zipCode"
-                          name="zipCode"
-                          value={newAddress.zipCode}
+                          id="postalCode"
+                          name="postalCode"
+                          value={newAddress.postalCode}
                           onChange={handleAddressChange}
                           required
                         />
@@ -381,12 +524,17 @@ const page = () => {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between mb-2">
+                {cart.map((item) => (
+                  <div
+                    key={item.productId}
+                    className="flex justify-between mb-2"
+                  >
                     <span>
                       {item.name} x {item.quantity}
                     </span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <span>
+                      ${(Number(item.basePrice) * item.quantity).toFixed(2)}
+                    </span>
                   </div>
                 ))}
                 <Separator className="my-4" />
