@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ProductPageProps } from "@/types/pages";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -35,6 +35,8 @@ import { useParams } from "next/navigation";
 import NotFound from "@/app/not-found";
 import { ProductPageData } from "@/types/request-and-response";
 import { API_URL } from "@/common/config";
+import { useActions, useCart } from "@/store/shopping-store";
+import { useToast } from "@/hooks/use-toast";
 
 const product = {
   name: "Classic Leather Jacket",
@@ -71,6 +73,9 @@ const product = {
 const page = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const updateCart = useActions().updateCart;
+  const cart = useCart();
+  const { toast } = useToast();
   const params = useParams();
   const productsInfo = useQuery<{ data: ProductPageData[] }>({
     queryKey: ["product", params.id],
@@ -81,14 +86,29 @@ const page = () => {
     enabled: !!params.id,
   });
 
-  const handleAddToBag = () => {
-    if (selectedSize) {
-      console.log(`Added ${product.name} (Size: ${selectedSize}) to bag`);
-      // Implement your add to cart logic here
+  const handleAddToBag = useCallback(() => {
+    if (!productsInfo.data?.data[0]) return;
+    const product = productsInfo.data.data[0];
+    const productInCart = cart.find(
+      (item) => item.productId === product.productId
+    );
+
+    if (productInCart) {
+      updateCart(
+        cart.map((item) =>
+          item.productId === product.productId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
     } else {
-      alert("Please select a size");
+      updateCart([...cart, { ...product, quantity: 1 }]);
     }
-  };
+    toast({
+      title: "Added to Cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  }, [productsInfo.data, cart, updateCart, toast]);
 
   if (productsInfo.isLoading) {
     return <div>Loading...</div>;
