@@ -34,6 +34,7 @@ interface LoginResponse {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const updateUser = useActions().updateUser;
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const updateTokens = useActions().updateTokens;
@@ -61,6 +62,7 @@ export default function LoginPage() {
       const data: LoginResponse = await response.json();
 
       updateTokens(data.data.tokens);
+      updateUser(data.data.user);
       // Save the tokens
       localStorage.setItem("token", data.data.tokens.accessToken);
       localStorage.setItem("refreshToken", data.data.tokens.refreshToken);
