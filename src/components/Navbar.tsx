@@ -32,14 +32,21 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "./ui/scroll-area";
 import { Input } from "./ui/input";
-import { useActions, useCart, useCategorys } from "@/store/shopping-store";
+import {
+  useActions,
+  useCart,
+  useCategorys,
+  useTokens,
+} from "@/store/shopping-store";
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@/types/store";
 import { CategoryService } from "@/services/category.service";
 import { API_URL } from "@/common/config";
+import { Router } from "next/router";
 
 const Navbar = () => {
   const router = useRouter();
+  const tokens = useTokens();
   const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -87,6 +94,14 @@ const Navbar = () => {
       ),
     [cart]
   );
+
+  const handleCheckout = () => {
+    if (!tokens.accessToken || !tokens.refreshToken) {
+      router.push("/login");
+    } else {
+      router.push("/checkout");
+    }
+  };
 
   useEffect(() => {
     // Press cmd+k to open search
@@ -288,7 +303,9 @@ const Navbar = () => {
                     <span className="font-bold">${cartTotal.toFixed(2)}</span>
                   </div>
                   <SheetClose asChild>
-                    <Button className="w-full">Checkout</Button>
+                    <Button className="w-full" onClick={handleCheckout}>
+                      Checkout
+                    </Button>
                   </SheetClose>
                 </div>
               </SheetFooter>

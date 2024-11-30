@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL } from "@/common/config";
+import { useActions } from "@/store/shopping-store";
 
 interface LoginResponse {
   message: string;
@@ -35,6 +36,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const updateTokens = useActions().updateTokens;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +60,7 @@ export default function LoginPage() {
 
       const data: LoginResponse = await response.json();
 
+      updateTokens(data.data.tokens);
       // Save the tokens
       localStorage.setItem("token", data.data.tokens.accessToken);
       localStorage.setItem("refreshToken", data.data.tokens.refreshToken);

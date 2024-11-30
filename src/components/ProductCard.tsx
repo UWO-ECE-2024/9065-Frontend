@@ -13,11 +13,13 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { API_URL } from "@/common/config";
 import { useActions, useCart } from "@/store/shopping-store";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductCard: React.FC<ProductCardProps> = (props) => {
   const router = useRouter();
   const updateCart = useActions().updateCart;
   const cart = useCart();
+  const { toast } = useToast();
 
   const primaryImage = useMemo(() => {
     return props.images
@@ -40,6 +42,10 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
     } else {
       updateCart([...cart, { ...props, quantity: 1 }]);
     }
+    toast({
+      title: "Added to Cart",
+      description: `${props.name} has been added to your cart.`,
+    });
   }, [props]);
 
   return (
