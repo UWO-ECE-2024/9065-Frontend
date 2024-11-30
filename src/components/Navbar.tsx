@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
 import {
   Menu,
@@ -118,6 +118,7 @@ const Navbar = () => {
         searchQuery.length > 0
           ? router.push(`/search?query=${encodeURIComponent(searchQuery)}`)
           : router.push("/search");
+        setIsSearchOpen(false);
       }
     };
 
@@ -332,4 +333,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default memo(Navbar);

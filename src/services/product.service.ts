@@ -5,4 +5,9 @@ export const ProductService = {
     await request({ method: "GET", path: "/v1/products/list" }),
   fetchProductById: async (productId: string) =>
     await request({ method: "GET", path: `/v1/products/${productId}` }),
+  searchProducts: async (data: { query?: string; category?: string }) =>
+    await request({
+      method: "GET",
+      path: `/v1/products/search?query=${data.query}&category=${data.category}`,
+    }),
 };
