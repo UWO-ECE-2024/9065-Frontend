@@ -300,6 +300,16 @@ const page = () => {
     }
   }, [addressList.isError, addressList.isFetched]);
 
+  useEffect(() => {
+    if (
+      !user.userId ||
+      !localStorage.getItem("token") ||
+      !localStorage.getItem("refreshToken")
+    ) {
+      router.push("/login");
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

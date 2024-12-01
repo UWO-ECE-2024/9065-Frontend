@@ -17,6 +17,7 @@ import { useUser } from "@/store/shopping-store";
 import NotFound from "../not-found";
 import { ProductData } from "@/types/request-and-response";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 
 // Mock data for the order
 const orderDetails = {
@@ -32,6 +33,7 @@ const orderDetails = {
 
 export default function PaymentSuccessPage() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const user = useUser();
   const [orderDetail, setOrderDetail] = useState<null | {
@@ -59,13 +61,15 @@ export default function PaymentSuccessPage() {
       setLoading(false);
       setOrderDetail(JSON.parse(orderData));
       localStorage.removeItem("order");
+    } else {
+      router.push("/");
     }
     if (
       !user.userId ||
       localStorage.getItem("token") === null ||
       localStorage.getItem("refreshToken") === null
     ) {
-      NotFound();
+      router.push("/login");
     }
   }, []);
   if (loading) {
