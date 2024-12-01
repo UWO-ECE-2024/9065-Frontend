@@ -32,6 +32,14 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
       (item) => item.productId === props.productId
     );
     if (productInCart) {
+      if (productInCart.quantity >= props.stockQuantity) {
+        toast({
+          title: "Out of Stock",
+          description: `${props.name} is out of stock.`,
+          variant: "destructive",
+        });
+        return;
+      }
       updateCart(
         cart.map((item) =>
           item.productId === props.productId
@@ -40,6 +48,14 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
         )
       );
     } else {
+      if (props.stockQuantity <= 0) {
+        toast({
+          title: "Out of Stock",
+          description: `${props.name} is out of stock.`,
+          variant: "destructive",
+        });
+        return;
+      }
       updateCart([...cart, { ...props, quantity: 1 }]);
     }
     toast({
