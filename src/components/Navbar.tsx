@@ -42,11 +42,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Category } from "@/types/store";
 import { CategoryService } from "@/services/category.service";
 import { API_URL } from "@/common/config";
-import { Router } from "next/router";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const router = useRouter();
   const tokens = useTokens();
+  const { toast } = useToast();
   const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -65,6 +66,17 @@ const Navbar = () => {
     (id: number, quantity: number) => {
       if (quantity === 0) {
         removeItem(id);
+      }
+      if (
+        quantity >
+        (cart.find((item) => item.productId === id)?.stockQuantity ?? 0)
+      ) {
+        toast({
+          title: "Out of Stock",
+          description: "This item is out of stock.",
+          variant: "destructive",
+        });
+        return;
       }
       updateCart(
         cart.map((item) =>

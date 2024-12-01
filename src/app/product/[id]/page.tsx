@@ -94,6 +94,14 @@ const page = () => {
     );
 
     if (productInCart) {
+      if (productInCart.quantity >= product.stockQuantity) {
+        toast({
+          title: "Out of Stock",
+          description: `${product.name} is out of stock.`,
+          variant: "destructive",
+        });
+        return;
+      }
       updateCart(
         cart.map((item) =>
           item.productId === product.productId
@@ -102,6 +110,14 @@ const page = () => {
         )
       );
     } else {
+      if (product.stockQuantity <= 0) {
+        toast({
+          title: "Out of Stock",
+          description: `${product.name} is out of stock.`,
+          variant: "destructive",
+        });
+        return;
+      }
       updateCart([...cart, { ...product, quantity: 1 }]);
     }
     toast({
