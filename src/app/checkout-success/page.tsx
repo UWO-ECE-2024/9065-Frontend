@@ -61,8 +61,6 @@ export default function PaymentSuccessPage() {
       setLoading(false);
       setOrderDetail(JSON.parse(orderData));
       localStorage.removeItem("order");
-    } else {
-      router.push("/");
     }
     if (
       !user.userId ||

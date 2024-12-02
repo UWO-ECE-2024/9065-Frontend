@@ -38,7 +38,10 @@ const page = () => {
   const updateCart = useActions().updateCart;
   const [refreshFlag, setRefreshFlag] = useState(false);
   const refreshToken = useMutation({
-    mutationKey: ["refreshToken", localStorage.getItem("refreshToken")],
+    mutationKey: [
+      "refreshToken",
+      typeof window !== "undefined" ? localStorage.getItem("refreshToken") : "",
+    ],
     mutationFn: userService.refreshToken,
   });
   const addAddress = useMutation({
@@ -126,7 +129,10 @@ const page = () => {
           postalCode: oldAddress?.postalCode ?? "",
           country: oldAddress?.country ?? "",
           isDefault: oldAddress?.isDefault ?? false,
-          token: localStorage.getItem("token") || "",
+          token:
+            typeof window !== "undefined"
+              ? localStorage.getItem("token") || ""
+              : "",
         },
         {
           onSuccess: () => {
@@ -166,7 +172,10 @@ const page = () => {
           postalCode: newAddress.postalCode,
           country: newAddress.country,
           isDefault: false,
-          token: localStorage.getItem("token") || "",
+          token:
+            typeof window !== "undefined"
+              ? localStorage.getItem("token") || ""
+              : "",
         },
         {
           onSuccess: () => {
@@ -196,7 +205,10 @@ const page = () => {
     deleteAddress.mutate(
       {
         addressId: id,
-        token: localStorage.getItem("token") || "",
+        token:
+          typeof window !== "undefined"
+            ? localStorage.getItem("token") || ""
+            : "",
       },
       {
         onSuccess: () => {
@@ -230,7 +242,10 @@ const page = () => {
       {
         products: cart,
         addressId: selectedAddress === "new" ? 0 : selectedAddress,
-        token: localStorage.getItem("token") || "",
+        token:
+          typeof window !== "undefined"
+            ? localStorage.getItem("token") || ""
+            : "",
         paymentMethod:
           paymentMethod === "credit-card"
             ? {
@@ -271,7 +286,10 @@ const page = () => {
   const handleRefreshToken = async () => {
     await refreshToken.mutateAsync(
       {
-        refreshToken: localStorage.getItem("refreshToken") || "",
+        refreshToken:
+          typeof window !== "undefined"
+            ? localStorage.getItem("refreshToken") || ""
+            : "",
       },
       {
         onSuccess: (data) => {
