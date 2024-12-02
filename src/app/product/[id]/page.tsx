@@ -94,7 +94,7 @@ const page = () => {
     );
 
     if (productInCart) {
-      if (productInCart.quantity >= product.stockQuantity) {
+      if (productInCart.quantity + 1 > product.stockQuantity) {
         toast({
           title: "Out of Stock",
           description: `${product.name} is out of stock.`,

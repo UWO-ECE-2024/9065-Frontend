@@ -32,7 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
       (item) => item.productId === props.productId
     );
     if (productInCart) {
-      if (productInCart.quantity >= props.stockQuantity) {
+      if (productInCart.quantity + 1 > props.stockQuantity) {
         toast({
           title: "Out of Stock",
           description: `${props.name} is out of stock.`,

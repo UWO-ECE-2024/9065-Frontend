@@ -64,11 +64,11 @@ const Navbar = () => {
 
   const updateCartItemsQuantity = useCallback(
     (id: number, quantity: number) => {
-      if (quantity === 0) {
-        removeItem(id);
+      if (quantity <= 0) {
+        return;
       }
       if (
-        quantity >
+        quantity >=
         (cart.find((item) => item.productId === id)?.stockQuantity ?? 0)
       ) {
         toast({
@@ -87,12 +87,9 @@ const Navbar = () => {
     [cart]
   );
 
-  const removeItem = useCallback(
-    (id: number) => {
-      updateCart(cart.filter((item) => item.productId !== id));
-    },
-    [cart]
-  );
+  const removeItem = (id: number) => {
+    updateCart(cart.filter((item) => item.productId !== id));
+  };
 
   const cartCount = useMemo(
     () => cart.reduce((sum, item) => sum + item.quantity, 0),
