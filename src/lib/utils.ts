@@ -13,7 +13,6 @@ export const request = async ({
   data,
   token,
 }: CustomRequest) => {
-  // const baseUrl = process.env.API_URL;
   const baseUrl = API_URL;
 
   let response;
@@ -49,4 +48,14 @@ export const update_tokens = (data: {
 }) => {
   localStorage.setItem("token", data.accessToken);
   localStorage.setItem("refreshToken", data.refreshToken);
+};
+
+export const clearUserAuth = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+};
+
+export const clearAdminAuth = () => {
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("adminRefreshToken");
 };
