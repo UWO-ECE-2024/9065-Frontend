@@ -1,11 +1,21 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "./ui/button";
-import { Menu, Search, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import {
+  Menu,
+  Search,
+  ShoppingBag,
+  ShoppingCart,
+  TextSearch,
+  User,
+  X,
+} from "lucide-react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -20,19 +30,87 @@ import {
 } from "./ui/command";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useRouter } from "next/navigation";
+import { ScrollArea } from "./ui/scroll-area";
+import { Input } from "./ui/input";
+import {
+  useActions,
+  useCart,
+  useCategorys,
+  useTokens,
+} from "@/store/shopping-store";
+import { useQuery } from "@tanstack/react-query";
+import { Category } from "@/types/store";
+import { CategoryService } from "@/services/category.service";
+import { API_URL } from "@/common/config";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const router = useRouter();
+  const tokens = useTokens();
+  const { toast } = useToast();
+  const categorys = useCategorys();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(1);
+  const cart = useCart();
+  const updateCart = useActions().updateCart;
   const [searchQuery, setSearchQuery] = useState("");
 
-  const searchResults = [
-    { title: "Brand A's Collection", category: "Brand A" },
-    { title: "Brand B's Collection", category: "Brand B" },
-    { title: "Brand C's Collcation", category: "Brand C" },
-  ];
+  const { data, isSuccess } = useQuery<{ data: Category[] }>({
+    queryKey: ["categories"],
+    queryFn: CategoryService.fetchCategories,
+    enabled: !categorys.length,
+  });
+  const updateCategory = useActions().setCategorys;
+
+  const updateCartItemsQuantity = useCallback(
+    (id: number, quantity: number) => {
+      if (quantity <= 0) {
+        return;
+      }
+      if (
+        quantity >=
+        (cart.find((item) => item.productId === id)?.stockQuantity ?? 0)
+      ) {
+        toast({
+          title: "Out of Stock",
+          description: "This item is out of stock.",
+          variant: "destructive",
+        });
+        return;
+      }
+      updateCart(
+        cart.map((item) =>
+          item.productId === id ? { ...item, quantity } : item
+        )
+      );
+    },
+    [cart]
+  );
+
+  const removeItem = (id: number) => {
+    updateCart(cart.filter((item) => item.productId !== id));
+  };
+
+  const cartCount = useMemo(
+    () => cart.reduce((sum, item) => sum + item.quantity, 0),
+    [cart]
+  );
+  const cartTotal = useMemo(
+    () =>
+      cart.reduce(
+        (sum, item) => sum + Number(item.basePrice) * item.quantity,
+        0
+      ),
+    [cart]
+  );
+
+  const handleCheckout = () => {
+    if (!tokens.accessToken || !tokens.refreshToken) {
+      router.push("/login");
+    } else {
+      router.push("/checkout");
+    }
+  };
 
   useEffect(() => {
     // Press cmd+k to open search
@@ -54,12 +132,19 @@ const Navbar = () => {
         searchQuery.length > 0
           ? router.push(`/search?query=${encodeURIComponent(searchQuery)}`)
           : router.push("/search");
+        setIsSearchOpen(false);
       }
     };
 
     document.addEventListener("keydown", handleEnterKey);
     return () => document.removeEventListener("keydown", handleEnterKey);
   }, [isSearchOpen, searchQuery, router]);
+
+  useEffect(() => {
+    if (isSuccess && categorys.length === 0) {
+      updateCategory(data.data);
+    }
+  }, [isSuccess]);
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b">
@@ -69,7 +154,11 @@ const Navbar = () => {
         }
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden relative  z-10"
+            >
               <Menu className="h-6 w-6" />
               <span className="sr-only">Toggle menu</span>
             </Button>
@@ -79,34 +168,28 @@ const Navbar = () => {
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-4 mt-4">
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand A
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand B
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand C
-              </Link>
-              <Link href="/search?query=BrandA" className="text-lg font-medium">
-                Brand D
-              </Link>
+              {categorys.map((category) => (
+                <Link
+                  key={category.categoryId}
+                  href={`/search?category=${category.name}`}
+                  className="text-lg font-medium"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </nav>
           </SheetContent>
         </Sheet>
         <nav className="hidden md:flex items-center gap-6 mx-6 z-10">
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand A
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand B
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand C
-          </Link>
-          <Link href="/search?query=BrandA" className="text-sm font-medium">
-            Brand D
-          </Link>
+          {categorys.slice(0, 3).map((category) => (
+            <Link
+              key={category.categoryId}
+              href={`/search?category=${category.name}`}
+              className="text-lg font-medium"
+            >
+              {category.name}
+            </Link>
+          ))}
         </nav>
 
         <div className="w-full  absolute flex items-center justify-center flex-1 md:justify-center z-0">
@@ -125,7 +208,7 @@ const Navbar = () => {
             className="relative"
             onClick={() => setIsSearchOpen(true)}
           >
-            <Search className="h-6 w-6" />
+            <TextSearch className="h-6 w-6" />
             <span className="sr-only">Search</span>
           </Button>
 
@@ -151,9 +234,90 @@ const Navbar = () => {
               <SheetHeader>
                 <SheetTitle>Your Cart</SheetTitle>
               </SheetHeader>
-              <div className="mt-4">
-                <p>Your cart items will appear here.</p>
-              </div>
+              <ScrollArea className="h-[calc(100vh-200px)] mt-4">
+                {cart.length === 0 ? (
+                  <p className="text-center text-muted-foreground">
+                    Your cart is empty.
+                  </p>
+                ) : (
+                  cart.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="flex items-center py-4 border-b"
+                    >
+                      <img
+                        src={`${API_URL}${item.images[0].url}`}
+                        alt={item.name}
+                        className="w-16 h-16 object-contain mr-4"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          ${item.basePrice}
+                        </p>
+                        <div className="flex items-center mt-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateCartItemsQuantity(
+                                item.productId,
+                                item.quantity - 1
+                              )
+                            }
+                          >
+                            -
+                          </Button>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateCartItemsQuantity(
+                                item.productId,
+                                parseInt(e.target.value)
+                              )
+                            }
+                            className="w-14 mx-2 text-center "
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              updateCartItemsQuantity(
+                                item.productId,
+                                item.quantity + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeItem(item.productId)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </ScrollArea>
+              <SheetFooter className="mt-4">
+                <div className="w-full">
+                  <div className="flex justify-between mb-4">
+                    <span>Total:</span>
+                    <span className="font-bold">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  <SheetClose asChild>
+                    <Button className="w-full" onClick={handleCheckout}>
+                      Checkout
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
@@ -172,15 +336,16 @@ const Navbar = () => {
           </VisuallyHidden.Root>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
-            {searchResults.map((result) => (
+            {categorys.slice(0, 3).map((result) => (
               <CommandItem
-                key={result.title}
+                key={result.categoryId}
                 onSelect={() => {
                   setIsSearchOpen(false);
                   // Handle navigation or other actions
+                  router.push(`/search?category=${result.name}`);
                 }}
               >
-                <span>{result.title}</span>
+                <span>{result.name}</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -190,4 +355,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default memo(Navbar);
