@@ -13,22 +13,32 @@ const Page = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_URL}/v1/products/list`);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const data = await response.json();
+      const products = data.data.map((product: any) => ({
+        productId: product.productId,
+        name: product.name,
+        description: product.description,
+        basePrice: product.basePrice,
+        stockQuantity: product.stockQuantity,
+        productCategory: product.categoryId,
+        imageUrl: "",
+        onStockChange: fetchProducts
+      }));
+      setProducts(products);
+    } catch (error) {
+      console.error("Fetching products failed: ", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Fetch products list
   useEffect(() => {
-    fetch(`${API_URL}/v1/products/list`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Network response was not ok");
-        return response.json();
-      })
-      .then((data) => {
-        const products = data.data.map((product: ProductStockCardProps) => ({
-          ...product,
-          imageUrl: "", // Initialize imageUrl
-        }));
-        setProducts(products);
-      })
-      .catch((error) => console.error("Fetching products failed: ", error))
-      .finally(() => setIsLoading(false));
+    fetchProducts();
   }, []);
 
   // Fetch product images
@@ -52,14 +62,12 @@ const Page = () => {
 
             return {
               ...product,
-              imageUrl: primaryImage ? `${primaryImage.data}` : "", // Default to empty if no primary image
+              imageUrl: primaryImage ? `${primaryImage.data}` : "",
             };
           })
         );
-        console.log("1update products +++");
         setProducts(updatedProducts);
         setImagesLoaded(true);
-        console.log("update products +++");
       } catch (error) {
         console.error("Error fetching product images:", error);
       }
@@ -67,7 +75,6 @@ const Page = () => {
 
     if (!imagesLoaded && products.length > 0) {
       fetchProductImages();
-      console.log("1update products +++");
     }
   }, [products, imagesLoaded]);
 
@@ -82,7 +89,11 @@ const Page = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => (
             //@ts-ignore
-            <ProductStockCard key={product.productId} {...product} />
+            <ProductStockCard 
+              key={product.productId} 
+              {...product} 
+              onStockChange={fetchProducts}
+            />
           ))}
           <AddItemCard />
         </div>

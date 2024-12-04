@@ -2,7 +2,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { CirclePlus, User } from "lucide-react";
+import { CirclePlus, User, ClipboardList } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const NavbarStocking = () => {
@@ -56,6 +56,12 @@ const NavbarStocking = () => {
             <Button variant="ghost" size="icon" className="relative">
               <User className="h-6 w-6" />
               <span className="sr-only">User Center</span>
+            </Button>
+          </Link>
+          <Link href="/order-management">
+            <Button variant="ghost" size="icon" className="relative">
+              <ClipboardList className="h-6 w-6" />
+              <span className="sr-only">Orders</span>
             </Button>
           </Link>
         </div>
