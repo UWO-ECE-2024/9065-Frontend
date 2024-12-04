@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = (props) => {
       title: "Added to Cart",
       description: `${props.name} has been added to your cart.`,
     });
-  }, [props]);
+  }, [props, cart]);
 
   return (
     <Card>
