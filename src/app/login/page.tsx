@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { API_URL } from "@/common/config";
 import { useActions } from "@/store/shopping-store";
+import { clearAdminAuth } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface LoginResponse {
   message: string;
@@ -44,6 +46,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      // First clear any existing admin auth
+      clearAdminAuth();
+
       const response = await fetch(`${API_URL}/v1/auth/login`, {
         method: "POST",
         headers: {
@@ -67,7 +72,12 @@ export default function LoginPage() {
       localStorage.setItem("token", data.data.tokens.accessToken);
       localStorage.setItem("refreshToken", data.data.tokens.refreshToken);
 
-      // Redirect to home
+      toast({
+        title: "Success",
+        description: "Logged in successfully",
+      });
+
+      // Redirect to user center
       router.push("/user-center");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
