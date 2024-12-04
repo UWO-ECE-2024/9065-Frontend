@@ -246,7 +246,7 @@ const Navbar = () => {
                       className="flex items-center py-4 border-b"
                     >
                       <img
-                        src={`${API_URL}item.images[0].url`}
+                        src={`${API_URL}${item.images[0].url}`}
                         alt={item.name}
                         className="w-16 h-16 object-contain mr-4"
                       />
