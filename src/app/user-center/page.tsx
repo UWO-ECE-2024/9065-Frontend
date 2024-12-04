@@ -27,6 +27,15 @@ interface Address {
   isDefault: boolean;
 }
 
+interface PaymentMethod {
+  paymentId: number;
+  cardType: string;
+  lastFour: string;
+  holderName: string;
+  expiryDate: string;
+  isDefault: boolean;
+}
+
 export default function UserCenterPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +45,8 @@ export default function UserCenterPage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [isAddingPayment, setIsAddingPayment] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
     firstName: "",
@@ -52,6 +63,14 @@ export default function UserCenterPage() {
     isDefault: false,
   });
 
+  const [paymentForm, setPaymentForm] = useState({
+    cardType: "",
+    lastFour: "",
+    holderName: "",
+    expiryDate: "",
+    isDefault: false,
+  });
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -60,6 +79,7 @@ export default function UserCenterPage() {
     }
     fetchProfile();
     fetchAddresses();
+    fetchPaymentMethods();
   }, []);
 
   useEffect(() => {
@@ -118,6 +138,28 @@ export default function UserCenterPage() {
       setAddresses(data.data);
     } catch (error) {
       setError("Failed to load addresses");
+    }
+  };
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const response = await fetch(`${API_URL}/v1/profile/payment-methods`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        throw new Error("Failed to fetch payment methods");
+      }
+      const data = await response.json();
+      setPaymentMethods(data.data);
+    } catch (error) {
+      setError("Failed to load payment methods");
     }
   };
 
@@ -190,6 +232,52 @@ export default function UserCenterPage() {
       setSuccess("Address deleted successfully");
     } catch (error) {
       setError("Failed to delete address");
+    }
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_URL}/v1/profile/payment-methods`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(paymentForm),
+      });
+      if (!response.ok) throw new Error("Failed to save payment method");
+      await fetchPaymentMethods();
+      setIsAddingPayment(false);
+      setPaymentForm({
+        cardType: "",
+        lastFour: "",
+        holderName: "",
+        expiryDate: "",
+        isDefault: false,
+      });
+      setSuccess("Payment method added successfully");
+    } catch (error) {
+      setError("Failed to save payment method");
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: number) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/v1/profile/payment-methods/${paymentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error("Failed to delete payment method");
+      await fetchPaymentMethods();
+      setSuccess("Payment method deleted successfully");
+    } catch (error) {
+      setError("Failed to delete payment method");
     }
   };
 
@@ -302,7 +390,7 @@ export default function UserCenterPage() {
         </Card>
 
         {/* Addresses Section */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Addresses</CardTitle>
             {!isAddingAddress && addresses.length < 3 && (
@@ -479,6 +567,156 @@ export default function UserCenterPage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Methods Section */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Payment Methods</CardTitle>
+            {!isAddingPayment && paymentMethods.length < 3 && (
+              <Button
+                onClick={() => setIsAddingPayment(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Payment Method
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {/* Payment Method Form */}
+            {isAddingPayment && (
+              <form onSubmit={handlePaymentSubmit} className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cardType">Card Type</Label>
+                    <Input
+                      id="cardType"
+                      value={paymentForm.cardType}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                          ...prev,
+                          cardType: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastFour">Card Number</Label>
+                    <Input
+                      id="lastFour"
+                      value={paymentForm.lastFour}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                          ...prev,
+                          lastFour: e.target.value,
+                        }))
+                      }
+                      required
+                      maxLength={16}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="holderName">Card Holder Name</Label>
+                    <Input
+                      id="holderName"
+                      value={paymentForm.holderName}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                          ...prev,
+                          holderName: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expiryDate">Expiry Date (MM/YY)</Label>
+                    <Input
+                      id="expiryDate"
+                      value={paymentForm.expiryDate}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                          ...prev,
+                          expiryDate: e.target.value,
+                        }))
+                      }
+                      required
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isDefaultPayment"
+                    checked={paymentForm.isDefault}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="isDefaultPayment">
+                    Set as default payment method
+                  </Label>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingPayment(false);
+                      setPaymentForm({
+                        cardType: "",
+                        lastFour: "",
+                        holderName: "",
+                        expiryDate: "",
+                        isDefault: false,
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">Add Payment Method</Button>
+                </div>
+              </form>
+            )}
+
+            {/* Payment Methods List */}
+            <div className="space-y-4">
+              {paymentMethods.map((payment) => (
+                <div
+                  key={payment.paymentId}
+                  className="border p-4 rounded-lg flex justify-between items-start"
+                >
+                  <div>
+                    <p className="font-medium">{payment.cardType}</p>
+                    <p>**** **** **** {payment.lastFour.slice(-4)}</p>
+                    <p>{payment.holderName}</p>
+                    <p>Expires: {payment.expiryDate}</p>
+                    {payment.isDefault && (
+                      <span className="text-sm text-blue-600 font-medium">
+                        Default Payment Method
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => handleDeletePayment(payment.paymentId)}
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>
