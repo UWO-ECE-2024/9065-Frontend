@@ -7,11 +7,21 @@ import { SetStateAction, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { ProductStockCardProps } from "@/types/components";
 import { API_URL } from "@/common/config";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
   const [products, setProducts] = useState<ProductStockCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      router.push("/admin/login");
+      return;
+    }
+  }, []);
 
   const fetchProducts = async () => {
     try {
